@@ -1,18 +1,37 @@
-#! /home/nikita/Robots/env/bin/python2
+#!/usr/bin/env python
+
+import os.path
 import random
 import math
 from sys import stderr
+
 from rtb import Robot, RobotColours
 from fuzzy.storage.fcl.Reader import Reader
 
-system = Reader().load_from_file('rules.fcl')
+
+__location__ = os.path.dirname(os.path.realpath(__file__))
+
+
+fuzzy = Reader().load_from_file(os.path.join(__location__, 'rules.fcl'))
+
 
 def debug(message):
-    stderr.write('D %s%s' % (message, '\n'))
+    stderr.write('Debug: {}\n'.format(message))
 
 
-in_data = {'Dist': 0.0, 'Type': 0.0, 'Speed': 0.0}
-out_data = {'Speedup': 0.0, 'Agr': 0.0, 'Rotation': 0.0}
+in_data = {
+    'Dist': 0.0,
+    'Type': 0.0,
+    'Speed': 0.0
+}
+
+
+out_data = {
+    'Speedup': 0.0,
+    'Agr': 0.0,
+    'Rotation': 0.0,
+}
+
 
 object_ids = {
     'cookie': 0,
@@ -21,11 +40,11 @@ object_ids = {
     'robot': 3,
 }
 
-direction = random.choice((-1,1))
 
 class MyRobot(Robot):
     def __init__(self, *args, **kwargs):
         self.speed = 0
+        self.direction = random.choice((-1,1))
         super(MyRobot, self).__init__(*args, **kwargs)
 
     def radar(self, distance, observed_object_type, radar_angle):
@@ -35,7 +54,7 @@ class MyRobot(Robot):
         in_data['Type'] = object_ids.get(observed_object_type, 0)
         in_data['Speed'] = self.speed * 10
 
-        system.calculate(in_data, out_data)
+        fuzzy.calculate(in_data, out_data)
         agr = out_data['Agr']
         speedup = out_data['Speedup'] - 1
         rotation = out_data['Rotation']
@@ -56,20 +75,12 @@ class MyRobot(Robot):
         if rotation < 0.1:
             self.send_rotate(0, robot=True)
         else:
-            #debug(str(out_data['Rotation']))
-            self.send_rotate_amount(0.7, direction * rotation * math.pi / 4, robot=True)
-        # if distance > 5:
-        #     self.send_accelerate(0.5)
-        #     self.send_rotate(0.2, robot=True)
-        # else:
-        #     self.send_rotate(0.6, robot=True)
-        # if observed_object_type == 'robot':
-        #     self.send_shoot(1)
+            self.send_rotate_amount(0.7, self.direction * rotation * math.pi / 4, robot=True)
 
     def info(self, time, speed, cannon_angle):
         self.speed = speed
 
 if __name__ == '__main__':
-    # We only create and start a robot if this script is runned as a main script
-    my_robot = MyRobot("My Robot", RobotColours(first_choice='386273', second_choice='d97154'))
+    my_robot = MyRobot("My Robot", RobotColours(first_choice='386273',
+                                                second_choice='d97154'))
     my_robot.start()
