@@ -22,7 +22,7 @@ def debug(message):
 in_data = {
     'Dist': 0.0,
     'Type': 0.0,
-    'Speed': 0.0
+    'Speed': 0.0,
 }
 
 
@@ -45,6 +45,8 @@ class MyRobot(Robot):
     def __init__(self, *args, **kwargs):
         self.speed = 0
         self.direction = random.choice((-1,1))
+        self.change = random.random() * 10 + 10
+        debug("change: {}".format (self.change))
         super(MyRobot, self).__init__(*args, **kwargs)
 
     def radar(self, distance, observed_object_type, radar_angle):
@@ -56,29 +58,35 @@ class MyRobot(Robot):
 
         fuzzy.calculate(in_data, out_data)
         agr = out_data['Agr']
-        speedup = out_data['Speedup'] - 1
+        speedup = out_data['Speedup']
         rotation = out_data['Rotation']
         #debug("in_data: " + str(in_data) + " action: " + str(out_data) + " act: %d %d %d" % (agr, speedup, rotation))
         if agr > 0.1:
             #debug("Shoot! " + str(agr))
             self.send_shoot(agr)
 
-        if speedup < -0.1:
-            debug("brake! " + str(speedup))
-            self.send_brake()
-        elif speedup < 0.1:
+        debug("speedup: {}".format(speedup))
+        if speedup < 0:
+            # debug("brake! " + str(speedup))
+            self.send_brake(-speedup)
             self.send_accelerate(0)
-            self.send_brake(0)
         else:
+            self.send_brake(0)
             self.send_accelerate(speedup)
 
         if rotation < 0.1:
             self.send_rotate(0, robot=True)
         else:
-            self.send_rotate_amount(0.7, self.direction * rotation * math.pi / 4, robot=True)
+            self.send_rotate_amount(0.8, self.direction * rotation * math.pi / 3, robot=True)
 
     def info(self, time, speed, cannon_angle):
         self.speed = speed
+        if time > self.change:
+            debug("Changed!!")
+            debug("speed: {}".format(self.speed))
+            self.direction = random.choice((-1,1))
+            self.change += random.random() * 10 + 10
+        # debug("Time: {}".format(time))
 
 if __name__ == '__main__':
     my_robot = MyRobot("My Robot", RobotColours(first_choice='386273',

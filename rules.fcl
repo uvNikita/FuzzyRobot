@@ -20,7 +20,7 @@ FUNCTION_BLOCK dummy
 
     FUZZIFY Speed
         TERM Slow := (0, 0) (0, 1) (20, 0) ;
-        TERM Fast := (10, 0) (50, 1) (100, 0) ;
+        TERM Fast := (15, 0) (25, 1) (50, 0) ;
     END_FUZZIFY
 
     FUZZIFY Type
@@ -40,9 +40,9 @@ FUNCTION_BLOCK dummy
     END_DEFUZZIFY
 
     DEFUZZIFY Speedup
-        TERM Brake := 0;
-        TERM Stay := 1 ;
-        TERM Increase := 2 ;
+        TERM Brake := -1;
+        TERM Stay := 0 ;
+        TERM Increase := 1;
         ACCU:MAX;
         METHOD: COGS;(*MoM;*)
         DEFAULT := 1;
