@@ -79,7 +79,7 @@ class RobotInfoListener(object):
                     self.coordinates(*map(float, command_line))
                 elif command == "Info":
                     self.info(
-                        time=float(command_line[0]), 
+                        time=float(command_line[0]),
                         speed=float(command_line[1]),
                         cannon_angle=float(command_line[2])
                     )
@@ -91,7 +91,7 @@ class RobotInfoListener(object):
                     )
                 elif command == "RotationReached":
                     # TODO: transform into "robot", "cannon" or "radar" accordingly
-                    self.rotation_reached(what_has_reached=int(command_line[0]))
+                    self.rotation_reached(what_has_reached=int_to_object[int(command_line[0])])
                 elif command == "Energy":
                     self.energy(energy_level=float(command_line[0]))
                 elif command == "RobotsLeft":
@@ -267,6 +267,9 @@ all_item_values = {
     'cannon': 2,
     'radar': 4
 }
+
+int_to_object = {v: k for k, v in all_item_values.items()}
+
 robot_item_values = all_item_values.copy()
 del robot_item_values['robot']
 

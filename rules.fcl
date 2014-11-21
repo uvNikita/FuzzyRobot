@@ -4,23 +4,30 @@ FUNCTION_BLOCK dummy
         Dist:     REAL; (* RANGE(0 .. 100) *)
         Type:     REAL; (* RANGE(0 .. 4) *)
         Speed:    REAL; (* RANGE(0 .. 100) *)
+        Angle:    REAL; (* RANGE(-1 .. 1) *)
     END_VAR
 
     VAR_OUTPUT
         Speedup  : REAL; (* RANGE(0 .. 2) *)
         Agr      : REAL; (* RANGE(0 .. 2) *)
-        Rotation : REAL; (* RANGE(0 .. 1) *)
+        Rotation : REAL; (* RANGE(-1 .. 1) *)
     END_VAR
 
+    FUZZIFY Angle
+        TERM Right := (-1, 1) (-0.1, 0) ;
+        TERM Forward := (-0.2, 0) (0, 1) (0.2, 0);
+        TERM Left := (0.1, 0) (1, 1) ;
+    END_FUZZIFY
+
     FUZZIFY Dist
-        TERM Near := (0, 0) (0, 1) (5, 0) ;
+        TERM Near := (0, 1) (5, 0) ;
         TERM Middle := (4, 0) (7, 1) (12, 0) ;
-        TERM Far := (10, 0) (15, 1) (50, 0) ;
+        TERM Far := (9, 0) (15, 1);
     END_FUZZIFY
 
     FUZZIFY Speed
-        TERM Slow := (0, 0) (0, 1) (20, 0) ;
-        TERM Fast := (15, 0) (25, 1) (50, 0) ;
+        TERM Slow := (0, 1) (1.2, 0) ;
+        TERM Fast := (1, 0) (2, 1);
     END_FUZZIFY
 
     FUZZIFY Type
@@ -45,13 +52,13 @@ FUNCTION_BLOCK dummy
         TERM Increase := 1;
         ACCU:MAX;
         METHOD: COGS;(*MoM;*)
-        DEFAULT := 1;
+        DEFAULT := 0;
     END_DEFUZZIFY
 
     DEFUZZIFY Rotation
-        TERM Stay := 0;
-        TERM Rotate := 1;
-        TERM FastRotate := 2;
+        TERM Right := -1;
+        TERM Forward := 0;
+        TERM Left := 1;
         ACCU:MAX;
         METHOD: COGS;(*MoM;*)
         DEFAULT := 0;
@@ -60,33 +67,89 @@ FUNCTION_BLOCK dummy
     RULEBLOCK first
         AND:MIN;
         (*ACCU:MAX;*)
-        RULE 0: IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Slow) THEN Agr IS ShootBig, Speedup IS Brake;
-        RULE 1: IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Fast) THEN Agr IS ShootBig, Speedup IS Brake;
-        RULE 2: IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Slow) THEN Agr IS ShootSmall;
-        RULE 3: IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Fast) THEN Agr IS ShootSmall;
-        RULE 4: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Slow) THEN Agr IS ShootSmall, Speedup IS Increase;
-        RULE 5: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Fast) THEN Agr IS ShootSmall;
+        RULE 0: IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Brake;
+        RULE 1: IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Brake;
+        RULE 2: IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Left;
+        RULE 3: IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Left;
+        RULE 4: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Increase;
+        RULE 5: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Left;
 
-        RULE 6:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Slow) THEN Speedup IS Brake, Rotation IS FastRotate;
-        RULE 7:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Fast) THEN Agr IS ShootSmall, Speedup IS Brake;
-        RULE 8:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Slow) THEN Rotation IS Rotate;
-        RULE 9:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Fast) THEN Rotation IS FastRotate;
-        RULE 10: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Slow) THEN Rotation IS Rotate;
-        RULE 11: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Fast) THEN Rotation IS Rotate;
+        RULE 6:  IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Brake;
+        RULE 7:  IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Brake;
+        RULE 8:  IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Right;
+        RULE 9:  IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Right;
+        RULE 10: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Increase;
+        RULE 11: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Right;
 
-        RULE 12: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Slow) THEN (Speedup IS Increase);
-        RULE 13: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Fast) THEN (Speedup IS Stay);
-        RULE 14: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Slow) THEN (Speedup IS Increase);
-        RULE 15: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Fast) THEN (Speedup IS Stay);
-        RULE 16: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Slow) THEN (Speedup IS Increase);
-        RULE 17: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Fast) THEN (Speedup IS Stay);
+        RULE 12: IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Forward) THEN Rotation IS Forward, Agr IS ShootBig, Speedup IS Brake;
+        RULE 13: IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Forward) THEN Rotation IS Forward, Agr IS ShootBig, Speedup IS Brake;
+        RULE 14: IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Forward) THEN Rotation IS Forward, Agr IS ShootSmall;
+        RULE 15: IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Forward) THEN Rotation IS Forward, Agr IS ShootSmall;
+        RULE 16: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Forward) THEN Rotation IS Forward, Agr IS ShootSmall, Speedup IS Increase;
+        RULE 17: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Forward) THEN Rotation IS Forward, Agr IS ShootSmall;
 
-        RULE 18: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Slow) THEN Speedup IS Brake, Rotation IS FastRotate;
-        RULE 19: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Fast) THEN Speedup IS Brake, Rotation IS FastRotate;
-        RULE 20: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Slow) THEN Speedup IS Increase, Rotation IS Rotate;
-        RULE 21: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Fast) THEN Speedup IS Stay, Rotation IS Rotate;
-        RULE 22: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Slow) THEN Speedup IS Increase;
-        RULE 23: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Fast) THEN Speedup IS Stay;
+        RULE 18:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Left) THEN Speedup IS Brake, Rotation IS Right;
+        RULE 19:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Left) THEN Speedup IS Brake, Rotation IS Right;
+        RULE 20:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Forward;
+        RULE 21:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Right;
+        RULE 22: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Forward;
+        RULE 23: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Forward;
+
+        RULE 24:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Right) THEN Speedup IS Brake, Rotation IS Left;
+        RULE 25:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Right) THEN Speedup IS Brake, Rotation IS Left;
+        RULE 26:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Forward;
+        RULE 27:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Left;
+        RULE 28: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Forward;
+        RULE 29: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Forward;
+
+        RULE 30:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Forward) THEN Speedup IS Brake, Rotation IS Left;
+        RULE 31:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Forward) THEN Agr IS ShootSmall, Speedup IS Brake;
+        RULE 32:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Forward) THEN Rotation IS Left;
+        RULE 33:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Forward) THEN Rotation IS Left;
+        RULE 34: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Forward) THEN Rotation IS Left;
+        RULE 35: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Forward) THEN Rotation IS Left;
+
+        RULE 36: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Increase;
+        RULE 37: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Stay;
+        RULE 38: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Increase;
+        RULE 39: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Stay;
+        RULE 40: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Increase;
+        RULE 41: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Left, Speedup IS Stay;
+
+        RULE 42: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Increase;
+        RULE 43: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Stay;
+        RULE 44: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Increase;
+        RULE 45: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Stay;
+        RULE 46: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Increase;
+        RULE 47: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Right, Speedup IS Stay;
+
+        RULE 48: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Forward) THEN Speedup IS Increase;
+        RULE 49: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Forward) THEN Speedup IS Stay;
+        RULE 50: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Forward) THEN Speedup IS Increase;
+        RULE 51: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Forward) THEN Speedup IS Stay;
+        RULE 52: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Forward) THEN Speedup IS Increase;
+        RULE 53: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Forward) THEN Speedup IS Stay;
+
+        RULE 54: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Left) THEN Rotation IS Right;
+        RULE 55: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Left) THEN Rotation IS Right;
+        RULE 56: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Left) THEN Speedup IS Stay;
+        RULE 57: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Left) THEN Speedup IS Stay;
+        RULE 58: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Left) THEN Speedup IS Increase;
+        RULE 59: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Left) THEN Speedup IS Stay;
+
+        RULE 60: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Right) THEN Rotation IS Left;
+        RULE 61: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Right) THEN Rotation IS Left;
+        RULE 62: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Right) THEN Speedup IS Stay;
+        RULE 63: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Right) THEN Speedup IS Stay;
+        RULE 64: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Right) THEN Speedup IS Increase;
+        RULE 65: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Right) THEN Speedup IS Stay;
+
+        RULE 66: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Slow) AND (Angle IS Forward) THEN Speedup IS Brake;
+        RULE 67: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Fast) AND (Angle IS Forward) THEN Speedup IS Brake;
+        RULE 68: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Slow) AND (Angle IS Forward) THEN Speedup IS Increase;
+        RULE 69: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Fast) AND (Angle IS Forward) THEN Speedup IS Stay;
+        RULE 70: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Slow) AND (Angle IS Forward) THEN Speedup IS Increase;
+        RULE 71: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Fast) AND (Angle IS Forward) THEN Speedup IS Stay;
 
     END_RULEBLOCK
 
