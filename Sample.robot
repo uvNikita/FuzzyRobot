@@ -47,21 +47,27 @@ RADAR_ANGLE = math.pi / 4
 class MyRobot(Robot):
     def __init__(self, *args, **kwargs):
         self.speed = 0
-        self.direction = random.choice((-1,1))
         self.change = random.random() * 10 + 10
+        self.is_rotating = False
         super(MyRobot, self).__init__(*args, **kwargs)
 
+    def initialize(self, *args, **kwargs):
+        self.send_option("send_rotation_reached", "rotate_finished")
+        super(MyRobot, self).initialize(*args, **kwargs)
+
     def game_starts(self, *args, **kwargs):
-        self.send_sweep(2, -RADAR_ANGLE, RADAR_ANGLE, radar=True)
+        self.send_sweep(1, -RADAR_ANGLE, RADAR_ANGLE, radar=True)
         super(MyRobot, self).game_starts(*args, **kwargs)
 
     def radar(self, distance, observed_object_type, radar_angle):
         #debug("RA: {}".format(radar_angle))
         # if observed_object_type in {'robot', 'cookie'}:
-        #     self.send_rotate(0, radar=True)
-        #     self.send_rotate_amount(1, radar_angle, radar=True) # !! to radar
-        # else:
-        #     self.send_sweep(0.8, -RADAR_ANGLE, RADAR_ANGLE, radar=True)
+        #     # self.send_rotate(0, radar=True)
+        #     self.send_rotate_amount(1, radar_angle, robot=True) # !! to radar
+        #     self.send_rotate_amount(1, 0, radar=True) # !! to radar
+        #     self.is_rotating = True
+        # elif not self.is_rotating:
+        #     self.send_sweep(1, -RADAR_ANGLE, RADAR_ANGLE, radar=True)
         in_data['Dist'] = distance
         in_data['Type'] = object_ids.get(observed_object_type, 0)
         in_data['Speed'] = self.speed
@@ -71,41 +77,26 @@ class MyRobot(Robot):
         agr = out_data['Agr']
         speedup = out_data['Speedup']
         rotation = out_data['Rotation']
-        debug("in_data: " + str(in_data) + " action: " + str(out_data) + " act: %d %d %d" % (agr, speedup, rotation))
         if agr > 0.1:
-            #debug("Shoot! " + str(agr))
             self.send_shoot(agr)
 
-        #debug("speedup: {}".format(speedup))
         if speedup < 0:
-            # debug("brake! " + str(speedup))
             self.send_brake(-speedup)
             self.send_accelerate(0)
         else:
             self.send_brake(0)
             self.send_accelerate(speedup)
 
-        #debug("Rotation {}".format(rotation))
-
-        if -0.05 < rotation < 0.05:
-            self.send_rotate(0, robot=True)
-        else:
-            self.send_rotate(rotation, robot=True)
+        if not self.is_rotating:
+            debug("send")
+            self.send_rotate_amount(0.8, rotation * math.pi / 2, robot=True)
+            self.is_rotating = True
 
     def info(self, time, speed, cannon_angle):
         self.speed = speed
-        if time > self.change:
-            debug("Changed!!")
-            debug("speed: {}".format(self.speed))
-            self.direction = random.choice((-1,1))
-            self.change += random.random() * 10 + 10
-        # debug("Time: {}".format(time))
 
-    # def rotation_reached(self, what_has_reached):
-    #     debug("rotated!")
-    #     if what_has_reached == 'radar':
-    #         self.radar_direction = -self.radar_direction
-    #         self.send_rotate_amount(1, self.radar_direction * math.pi / 4, radar=True)
+    def rotation_reached(self, what_has_reached):
+        self.is_rotating = False
 
 if __name__ == '__main__':
     my_robot = MyRobot("My Robot", RobotColours(first_choice='386273',

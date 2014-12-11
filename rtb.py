@@ -269,6 +269,7 @@ all_item_values = {
 }
 
 int_to_object = {v: k for k, v in all_item_values.items()}
+int_to_object[5] = "robotradar"
 
 robot_item_values = all_item_values.copy()
 del robot_item_values['robot']
