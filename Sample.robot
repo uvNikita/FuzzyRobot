@@ -47,7 +47,6 @@ RADAR_ANGLE = math.pi / 4
 class MyRobot(Robot):
     def __init__(self, *args, **kwargs):
         self.speed = 0
-        self.change = random.random() * 10 + 10
         self.is_rotating = False
         super(MyRobot, self).__init__(*args, **kwargs)
 
@@ -60,14 +59,12 @@ class MyRobot(Robot):
         super(MyRobot, self).game_starts(*args, **kwargs)
 
     def radar(self, distance, observed_object_type, radar_angle):
-        #debug("RA: {}".format(radar_angle))
-        # if observed_object_type in {'robot', 'cookie'}:
-        #     # self.send_rotate(0, radar=True)
-        #     self.send_rotate_amount(1, radar_angle, robot=True) # !! to radar
-        #     self.send_rotate_amount(1, 0, radar=True) # !! to radar
-        #     self.is_rotating = True
-        # elif not self.is_rotating:
-        #     self.send_sweep(1, -RADAR_ANGLE, RADAR_ANGLE, radar=True)
+        if observed_object_type in {'robot', 'cookie'}:
+            self.send_rotate_amount(1, radar_angle, robot=True)
+            self.send_rotate_amount(1, -radar_angle, radar=True)
+        elif not self.is_rotating:
+            self.send_sweep(1, -RADAR_ANGLE, RADAR_ANGLE, radar=True)
+
         in_data['Dist'] = distance
         in_data['Type'] = object_ids.get(observed_object_type, 0)
         in_data['Speed'] = self.speed
@@ -88,7 +85,6 @@ class MyRobot(Robot):
             self.send_accelerate(speedup)
 
         if not self.is_rotating:
-            debug("send")
             self.send_rotate_amount(0.8, rotation * math.pi / 2, robot=True)
             self.is_rotating = True
 
