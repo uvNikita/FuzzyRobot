@@ -19,21 +19,6 @@ def debug(message):
     stderr.write('Debug: {}\n'.format(message))
 
 
-in_data = {
-    'Dist': 0.0,
-    'Type': 0.0,
-    'Speed': 0.0,
-    'Angle': 0.0,
-}
-
-
-out_data = {
-    'Speedup': 0.0,
-    'Agr': 0.0,
-    'Rotation': 0.0,
-}
-
-
 object_ids = {
     'cookie': 0,
     'wall': 1,
@@ -65,8 +50,21 @@ class MyRobot(Robot):
         elif not self.is_rotating:
             self.send_sweep(1, -RADAR_ANGLE, RADAR_ANGLE, radar=True)
 
+        in_data = {
+            'Dist': 0.0,
+            'Type': 0.0,
+            'Speed': 0.0,
+            'Angle': 0.0,
+        }
+
+        out_data = {
+            'Speedup': 0.0,
+            'Agr': 0.0,
+            'Rotation': 0.0,
+        }
+
         in_data['Dist'] = distance
-        in_data['Type'] = object_ids.get(observed_object_type, 0)
+        in_data['Type'] = object_ids.get(observed_object_type, 1)
         in_data['Speed'] = self.speed
         in_data['Angle'] = radar_angle / RADAR_ANGLE
 
