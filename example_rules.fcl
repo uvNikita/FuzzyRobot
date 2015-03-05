@@ -1,0 +1,93 @@
+FUNCTION_BLOCK dummy
+
+    VAR_INPUT
+        Dist:     REAL; (* RANGE(0 .. 100) *)
+        Type:     REAL; (* RANGE(0 .. 4) *)
+        Speed:    REAL; (* RANGE(0 .. 100) *)
+    END_VAR
+
+    VAR_OUTPUT
+        Speedup  : REAL; (* RANGE(0 .. 2) *)
+        Agr      : REAL; (* RANGE(0 .. 2) *)
+        Rotation : REAL; (* RANGE(0 .. 1) *)
+    END_VAR
+
+    FUZZIFY Dist
+        TERM Near := (0, 0) (0, 1) (5, 0) ;
+        TERM Middle := (4, 0) (7, 1) (12, 0) ;
+        TERM Far := (10, 0) (15, 1) (50, 0) ;
+    END_FUZZIFY
+
+    FUZZIFY Speed
+        TERM Slow := (0, 0) (0, 0.1) (2, 0) ;
+        TERM Fast := (1.5, 0) (2.5, 1) (5, 0) ;
+    END_FUZZIFY
+
+    FUZZIFY Type
+        TERM Health := 0;
+        TERM Wall := 1;
+        TERM Mine := 2;
+        TERM Enemy := 3;
+    END_FUZZIFY
+
+    DEFUZZIFY Agr
+        TERM NoShoot := 0;
+        TERM ShootSmall := 1 ;
+        TERM ShootBig := 2 ;
+        ACCU:MAX;
+        METHOD: COGS;(*MoM;*)
+        DEFAULT := 0;
+    END_DEFUZZIFY
+
+    DEFUZZIFY Speedup
+        TERM Brake := -1;
+        TERM Stay := 0 ;
+        TERM Increase := 1;
+        ACCU:MAX;
+        METHOD: COGS;(*MoM;*)
+        DEFAULT := 1;
+    END_DEFUZZIFY
+
+    DEFUZZIFY Rotation
+        TERM Stay := 0;
+        TERM Rotate := 1;
+        TERM FastRotate := 2;
+        ACCU:MAX;
+        METHOD: COGS;(*MoM;*)
+        DEFAULT := 0;
+    END_DEFUZZIFY
+
+    RULEBLOCK first
+        AND:MIN;
+        (*ACCU:MAX;*)
+        RULE 0: IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Slow) THEN Agr IS ShootBig, Speedup IS Brake;
+        RULE 1: IF (Type IS Enemy) AND (Dist IS Near)   AND (Speed IS Fast) THEN Agr IS ShootBig, Speedup IS Brake;
+        RULE 2: IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Slow) THEN Agr IS ShootSmall;
+        RULE 3: IF (Type IS Enemy) AND (Dist IS Middle) AND (Speed IS Fast) THEN Agr IS ShootSmall;
+        RULE 4: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Slow) THEN Agr IS ShootSmall, Speedup IS Increase;
+        RULE 5: IF (Type IS Enemy) AND (Dist IS Far)    AND (Speed IS Fast) THEN Agr IS ShootSmall;
+
+        RULE 6:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Slow) THEN Speedup IS Brake, Rotation IS FastRotate;
+        RULE 7:  IF (Type IS Mine) AND (Dist IS Near)   AND (Speed IS Fast) THEN Agr IS ShootSmall, Speedup IS Brake;
+        RULE 8:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Slow) THEN Rotation IS Rotate;
+        RULE 9:  IF (Type IS Mine) AND (Dist IS Middle) AND (Speed IS Fast) THEN Rotation IS FastRotate;
+        RULE 10: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Slow) THEN Rotation IS Rotate;
+        RULE 11: IF (Type IS Mine) AND (Dist IS Far)    AND (Speed IS Fast) THEN Rotation IS Rotate;
+
+        RULE 12: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Slow) THEN (Speedup IS Increase);
+        RULE 13: IF (Type IS Health) AND (Dist IS Near)   AND (Speed IS Fast) THEN (Speedup IS Stay);
+        RULE 14: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Slow) THEN (Speedup IS Increase);
+        RULE 15: IF (Type IS Health) AND (Dist IS Middle) AND (Speed IS Fast) THEN (Speedup IS Stay);
+        RULE 16: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Slow) THEN (Speedup IS Increase);
+        RULE 17: IF (Type IS Health) AND (Dist IS Far)    AND (Speed IS Fast) THEN (Speedup IS Stay);
+
+        RULE 18: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Slow) THEN Speedup IS Brake, Rotation IS FastRotate;
+        RULE 19: IF (Type IS Wall) AND (Dist IS Near)   AND (Speed IS Fast) THEN Speedup IS Brake, Rotation IS FastRotate;
+        RULE 20: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Slow) THEN Speedup IS Increase, Rotation IS Rotate;
+        RULE 21: IF (Type IS Wall) AND (Dist IS Middle) AND (Speed IS Fast) THEN Speedup IS Stay, Rotation IS Rotate;
+        RULE 22: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Slow) THEN Speedup IS Increase;
+        RULE 23: IF (Type IS Wall) AND (Dist IS Far)    AND (Speed IS Fast) THEN Speedup IS Stay;
+
+    END_RULEBLOCK
+
+END_FUNCTION_BLOCK
