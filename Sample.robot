@@ -72,9 +72,11 @@ class MyRobot(Robot):
         agr = out_data['Agr']
         speedup = out_data['Speedup']
         rotation = out_data['Rotation']
-        if agr > 0.1:
-            self.send_shoot(agr)
 
+        # shoot with calculated aggression
+        self.send_shoot(agr)
+
+        # if calculated speedup is negative, then robot should brake, accelerate in other case
         if speedup < 0:
             self.send_brake(-speedup)
             self.send_accelerate(0)
